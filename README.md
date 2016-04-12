@@ -1,56 +1,65 @@
 Datera Flocker Plugin
 ======================
 
-## Datera Flocker Intergration Block Diagram
-![Datera Flocker Intergration Block Diagram Missing]
-(https://github.com/datera/flocker-drivers/blob/master/demo/DateraFlocker.jpg)
+
 ## Installation
 - Install OpeniSCSI
-    * Ubuntu<br>
+    * Ubuntu
    ```bash
     sudo apt-get update
     sudo apt-get install -y open-iscsi
     sudo apt-get install -y lsscsi
     sudo apt-get -y install device-mapper-multipath
     ```
-    * Centos<br>
+    * Centos
     ```bash
+    sudo yum check-update
     sudo yum -y install iscsi-initiator-utils
     sudo yum -y install lsscsi
     sudo yum -y install device-mapper-multipath
     ```
-- Install ClusterHQ/Flocker<br>
-Refer to install notes -> https://docs.clusterhq.com/en/latest/docker-integration/install-node.html#installing-on-centos-7
-- Install Prerequisits tools<br>
+- Install ClusterHQ/Flocker
+      
+
+             Refer to install notes :
+                    https://docs.clusterhq.com/en/latest/docker-integration/install-node.html
+
+- Install Prerequisits tools
 
     [Some of these steps may have been completed, as per the previous step]
 
+    ```bash
     if selinuxenabled; then setenforce 0; fi
-    test -e /etc/selinux/config && sed --in-place='.preflocker' 's/^SELINUX=.*$/SELINUX=disabled/g' /etc/selinux/config
+    test -e /etc/selinux/config && \
+        sed --in-place='.preflocker' 's/^SELINUX=.*$/SELINUX=disabled/g' /etc/selinux/config
     yum clean all
-    yum install -y https://clusterhq-archive.s3.amazonaws.com/centos/clusterhq-release$(rpm -E %dist).noarch.rpm
+    yum install -y \
+        https://clusterhq-archive.s3.amazonaws.com/centos/clusterhq-release$(rpm -E %dist).noarch.rpm
     yum install -y clusterhq-flocker-node
     systemctl enable docker.service
     systemctl start docker.service
-- Install Datera Plugin 
+    ```
+- Install Datera Plugin
+
 Flocker comes with its own Python context.
 Flocker also depends on the ClusterHQ forked repository of 'testtools'
 You must install the plugin and Datera Python SDK within the Flocker Python context.
 You CANNOT use the default Python command.
 
-   ```bash
+```bash
     git clone https://github.com/datera/python-sdk
     cd python-sdk
     sudo /opt/flocker/bin/python2.7 setup.py install
     cd ..
-    git clone https://github.com/datera/flocker-driver
-    cd flocker-driver
-    sudo /opt/flocker/bin/pip install --upgrade --process-dependency-links .[dev]  git+https://github.com/ClusterHQ/testtools@clusterhq-fork#egg=testtools-1.8.2chq2
+    git clone https://github.com/datera/datera-flocker-driver
+    cd datera-flocker-driver
+    sudo /opt/flocker/bin/pip install --upgrade --process-dependency-links .[dev] \
+           git+https://github.com/ClusterHQ/testtools@clusterhq-fork#egg=testtools-1.8.2chq2
     sudo /opt/flocker/bin/python2.7 setup.py install
-    ```
+```
 
 ## Usage Instructions
-To start the plugin on a node, a configuration file must exist on the node at /etc/flocker/agent.yml. This should be as follows, replacing ${datera_ip}, ${datera_user} & ${datera_password} with the ip/hostname, username and password of Datera Mgmt IP port:
+To start the plugin on a node, a configuration file must exist on the node at /etc/flocker/agent.yml. This should be as follows, replacing __${datera_ip}__,   __${datera_user}__ and   __${datera_password}__ with the ip/hostname, username and password of Datera Mgmt IP port:
 ```bash
 version: 1
 control-service:
