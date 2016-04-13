@@ -7,16 +7,12 @@ Datera Flocker Plugin
     * Ubuntu
    ```bash
     sudo apt-get update
-    sudo apt-get install -y open-iscsi
-    sudo apt-get install -y lsscsi
-    sudo apt-get -y install device-mapper-multipath
+    sudo apt-get install -y open-iscsi multipath-tools git
     ```
     * Centos
     ```bash
     sudo yum check-update
-    sudo yum -y install iscsi-initiator-utils
-    sudo yum -y install lsscsi
-    sudo yum -y install device-mapper-multipath
+    sudo yum -y install iscsi-initiator-utils device-mapper-multipath git
     ```
 - Install ClusterHQ/Flocker
       
@@ -28,7 +24,15 @@ Datera Flocker Plugin
 
     [Some of these steps may have been completed, as per the previous step]
 
-    ```bash
+    - Ensure that __selinux__ (CentOS/RH) or __apparmor__ (Ubuntu) have been **disabled**
+    
+    - Ensure that the __clusterhq-release__ , __clusterhq-python-flocker__, 
+     __clusterhq-flocker-docker-plugin__ and __cluseterhq-flocker-node__ have been installed for the appropriate distro and arch
+
+    - Ensure that the __docker__ service has been started and enabled to run at startup
+    
+    - CentOS/RH Example:
+```bash
     if selinuxenabled; then setenforce 0; fi
     test -e /etc/selinux/config && \
         sed --in-place='.preflocker' 's/^SELINUX=.*$/SELINUX=disabled/g' /etc/selinux/config
@@ -38,7 +42,7 @@ Datera Flocker Plugin
     yum install -y clusterhq-flocker-node
     systemctl enable docker.service
     systemctl start docker.service
-    ```
+```
 - Install Datera Plugin
 
 Flocker comes with its own Python context.
@@ -74,14 +78,15 @@ dataset:
 
 ## Running Tests
 
-Setup the config file (edit values for your environment)
+To verify the datera-flocker-plugin, setup the config file (edit values for your environment)
 ```bash
 export DATERA_FLOCKER_CFG=/etc/flocker/datera.yml
 vi $DATERA_FLOCKER_CFG
 datera:
   user: ${Datera_USERNAME}
   password: ${Datera_PASSWORD}
-  mgmt_ip: ${Datera_MGMT_IP}
+  mgmt_addr: ${Datera_MGMT_IP}
+  cluster_id: "flocker-"
 ```
 Run the tests
 ```bash
