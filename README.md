@@ -43,6 +43,13 @@ Datera Flocker Plugin
     systemctl enable docker.service
     systemctl start docker.service
 ```
+- Install and Configure 'multipath'
+```
+        - Ensure there is a valid multipath.conf file
+        - systemctl enable multipathd
+        - systemctl start multipathd
+```
+
 - Install Datera Plugin
 
 Flocker comes with its own Python context.

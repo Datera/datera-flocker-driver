@@ -6,6 +6,7 @@ import time
 import re
 import socket
 import platform
+import glob
 
 from flocker.node.agents.blockdevice import (
     AlreadyAttachedVolume,
@@ -21,12 +22,14 @@ from subprocess import check_output
 from dfs_sdk import DateraApi
 from dfs_sdk.exceptions import ApiError
 
-ISCSI_LOGIN_TIME_DELAY = 7
+# ISCSI_LOGIN_TIME_DELAY = 7
+ISCSI_LOGIN_TIME_DELAY = 2
 DATERA_ALLOCATION_UNIT = (1024 * 1024 * 1024)
 DATERA_CLUSTER_ID = "flocker-"
 INITIATOR_FILE = "/etc/iscsi/initiatorname.iscsi"
 DISK_BY_PATH = "/dev/disk/by-path"
 SYS_BLOCK = "/sys/block"
+SYS_BLOCK_DM = "/sys/block/dm-*"
 
 _logger = Logger()
 
@@ -132,11 +135,11 @@ def iqn_to_sd(iqn):
 
 # Translate /dev/sdX entry to /dev/dm-X entry
 def sd_to_dm(sd):
-    for f in os.listdir(SYS_BLOCK):
-        t = "{}/{}/slaves/{}".format(SYS_BLOCK, f, sd)
-        if os.path.islink(t):
-            return f
-
+    for f in glob.glob(SYS_BLOCK_DM):
+        slaves = f + "/slaves"
+        for s in os.listdir(slaves):
+            if s == sd:
+                return os.path.basename (f)
 
 # Translate /dev/dm-X entry to /dev/mapper/mpathXX
 def dm_to_mapper(dm):
@@ -360,6 +363,8 @@ class DateraBlockDeviceAPI(object):
             attached_to=attach_to).write(_logger)
         ensure_acl_exists(si, ii)
         login_to_target(si)
+        # Need to let multipath do its thing before moving on
+        time.sleep (ISCSI_LOGIN_TIME_DELAY)
         self._vols[blockdevice_id]['attached_to'] = attach_to
         volume = BlockDeviceVolume(
             size=self._vols[blockdevice_id]['size'],
@@ -440,13 +445,20 @@ class DateraBlockDeviceAPI(object):
             raise DeviceExceptionAPIError
         sd = iqn_to_sd(iqn)
         if not sd:
+            Message.new(
+                Info='FAIL iqn_to_sd for : ' + str(iqn)).write(_logger)
             raise UnattachedVolume(blockdevice_id)
         dm = sd_to_dm(sd)
         if not dm:
+            Message.new(
+                Info='FAIL sd_to_dm for : ' + str(sd)).write(_logger)
             raise UnattachedVolume(blockdevice_id)
         mpath = dm_to_mapper(dm)
         if mpath:
             return FilePath("/dev/mapper/" + mpath)
+        else:
+            Message.new(
+                Info='FAIL dm_to_mapper for : ' + str(dm)).write(_logger)
         raise UnattachedVolume(blockdevice_id)
 
 
